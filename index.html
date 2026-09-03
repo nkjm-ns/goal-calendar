@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="目標カレンダー" />
+<title>目標カレンダー</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; background: #F3F1EC; }
+  body {
+    font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: #2B2B28;
+    padding-bottom: calc(100px + env(safe-area-inset-bottom));
+  }
+  button { font-family: inherit; touch-action: manipulation; -webkit-appearance: none; appearance: none; }
+
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: #F3F1EC;
+    border-bottom: 1px solid #E0DCD1;
+    padding: calc(18px + env(safe-area-inset-top)) 16px 14px;
+  }
+  .eyebrow {
+    font-family: 'Fraunces', serif;
+    font-size: 13px;
+    letter-spacing: 0.02em;
+    color: #8A8577;
+    margin-bottom: 2px;
+  }
+  .month-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .nav-btn {
+    background: none;
+    border: none;
+    padding: 8px;
+    color: #5A5648;
+    display: flex;
+  }
+  .nav-btn svg { width: 22px; height: 22px; }
+  .month-label {
+    background: none;
+    border: none;
+    font-family: 'Fraunces', serif;
+    font-size: 24px;
+    font-weight: 600;
+    color: #2B2B28;
+  }
+  .back-today {
+    text-align: center;
+  }
+  .back-today button {
+    background: none;
+    border: none;
+    font-size: 12px;
+    color: #33506E;
+    text-decoration: underline;
+    padding: 4px;
+  }
+
+  #goalList {
+    padding: 16px 16px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .empty-state {
+    text-align: center;
+    padding: 48px 20px;
+    color: #8A8577;
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  .goal-card {
+    background: #FFFFFF;
+    border-radius: 14px;
+    padding: 14px 14px 16px;
+    border: 1px solid #E7E3D8;
+  }
+  .goal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .goal-title-wrap {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    min-width: 0;
+  }
+  .dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .goal-title {
+    font-family: 'Fraunces', serif;
+    font-size: 17px;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .goal-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+  .goal-count {
+    font-size: 12px;
+    color: #8A8577;
+    white-space: nowrap;
+  }
+  .icon-btn {
+    background: none;
+    border: none;
+    padding: 4px;
+    display: flex;
+  }
+  .icon-btn svg { width: 15px; height: 15px; color: #C7C2B4; }
+  .confirm-del {
+    background: #C0392B;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 11px;
+    padding: 4px 8px;
+    white-space: nowrap;
+  }
+  .cancel-del { background: none; border: none; color: #8A8577; padding: 4px; display: flex; }
+  .cancel-del svg { width: 16px; height: 16px; }
+
+  .weekday-row, .day-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+  }
+  .weekday-row { margin-bottom: 4px; }
+  .weekday-row div {
+    text-align: center;
+    font-size: 10px;
+    color: #B3AE9F;
+    font-weight: 500;
+  }
+  .day-btn {
+    aspect-ratio: 1;
+    border-radius: 8px;
+    border: 1.5px solid transparent;
+    font-size: 13px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.08s ease;
+  }
+  .day-btn:active { transform: scale(0.9); }
+  .day-empty { aspect-ratio: 1; }
+
+  #addWrap { padding: 14px 16px 0; }
+  .add-form {
+    background: #FFFFFF;
+    border: 1px solid #E7E3D8;
+    border-radius: 14px;
+    padding: 12px;
+    display: flex;
+    gap: 8px;
+  }
+  .add-form input {
+    flex: 1;
+    border: 1px solid #E0DCD1;
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 14px;
+    outline: none;
+    min-width: 0;
+    font-family: inherit;
+  }
+  .add-form button {
+    background: #2B2B28;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 0 16px;
+    font-size: 14px;
+    font-weight: 500;
+    flex-shrink: 0;
+  }
+  .add-toggle {
+    width: 100%;
+    background: none;
+    border: 1.5px dashed #C7C2B4;
+    border-radius: 14px;
+    padding: 13px 0;
+    color: #8A8577;
+    font-size: 14px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .add-toggle svg { width: 16px; height: 16px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">目標カレンダー</div>
+  <div class="month-row">
+    <button class="nav-btn" id="prevMonth" aria-label="前の月">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <button class="month-label" id="monthLabel"></button>
+    <button class="nav-btn" id="nextMonth" aria-label="次の月">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+  </div>
+  <div class="back-today" id="backToday" style="display:none;">
+    <button id="backTodayBtn">今月に戻る</button>
+  </div>
+</header>
+
+<div id="goalList"></div>
+
+<div id="addWrap">
+  <div class="add-form" id="addForm" style="display:none;">
+    <input id="newGoalInput" placeholder="目標の名前（例: 毎日ストレッチ）" maxlength="40" />
+    <button id="submitGoal">追加</button>
+  </div>
+  <button class="add-toggle" id="addToggle">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    目標を追加
+  </button>
+</div>
+
+<script>
+(function () {
+  var STORAGE_KEY = "goal-calendars-v1";
+  var PALETTE = [
+    { fg: "#3F5D45", bg: "#DCE6DC" },
+    { fg: "#33506E", bg: "#DAE3EC" },
+    { fg: "#8A6420", bg: "#EFE1BE" },
+    { fg: "#6B4064", bg: "#E7DAE5" },
+    { fg: "#8A4A34", bg: "#EADAD1" },
+    { fg: "#4A4E5A", bg: "#DEE0E6" }
+  ];
+  var WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"];
+
+  var today = new Date();
+  var year = today.getFullYear();
+  var month = today.getMonth();
+  var goals = [];
+  var confirmDeleteId = null;
+
+  function pad(n) { return String(n).padStart(2, "0"); }
+  function dateKey(y, m, d) { return y + "-" + pad(m + 1) + "-" + pad(d); }
+  function daysInMonth(y, m) { return new Date(y, m + 1, 0).getDate(); }
+  function firstWeekday(y, m) { return new Date(y, m, 1).getDay(); }
+  function escapeHtml(s) {
+    return s.replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  function load() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) goals = JSON.parse(raw);
+    } catch (e) { goals = []; }
+  }
+  function save() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(goals)); } catch (e) {}
+  }
+
+  function render() {
+    var isCurrentMonth = year === today.getFullYear() && month === today.getMonth();
+    document.getElementById("monthLabel").textContent = year + "年 " + (month + 1) + "月";
+    document.getElementById("backToday").style.display = isCurrentMonth ? "none" : "block";
+
+    var nDays = daysInMonth(year, month);
+    var startOffset = firstWeekday(year, month);
+    var cells = [];
+    for (var i = 0; i < startOffset; i++) cells.push(null);
+    for (var d = 1; d <= nDays; d++) cells.push(d);
+
+    var listEl = document.getElementById("goalList");
+    listEl.innerHTML = "";
+
+    if (goals.length === 0) {
+      var empty = document.createElement("div");
+      empty.className = "empty-state";
+      empty.innerHTML = "まだ目標がありません。<br />下の「＋ 目標を追加」から始めましょう。";
+      listEl.appendChild(empty);
+      return;
+    }
+
+    goals.forEach(function (goal, idx) {
+      var color = PALETTE[goal.colorIdx % PALETTE.length];
+      var doneCount = cells.filter(function (dd) {
+        return dd && goal.checks[dateKey(year, month, dd)];
+      }).length;
+
+      var card = document.createElement("div");
+      card.className = "goal-card";
+
+      var head = document.createElement("div");
+      head.className = "goal-head";
+
+      var titleWrap = document.createElement("div");
+      titleWrap.className = "goal-title-wrap";
+      titleWrap.innerHTML =
+        '<span class="dot" style="background:' + color.fg + '"></span>' +
+        '<span class="goal-title">' + escapeHtml(goal.name) + "</span>";
+
+      var actions = document.createElement("div");
+      actions.className = "goal-actions";
+
+      var countEl = document.createElement("span");
+      countEl.className = "goal-count";
+      countEl.textContent = doneCount + "/" + nDays + "日";
+      actions.appendChild(countEl);
+
+      if (confirmDeleteId === goal.id) {
+        var delBtn = document.createElement("button");
+        delBtn.className = "confirm-del";
+        delBtn.textContent = "削除する";
+        delBtn.onclick = function () {
+          goals = goals.filter(function (g) { return g.id !== goal.id; });
+          confirmDeleteId = null;
+          save(); render();
+        };
+        var cancelBtn = document.createElement("button");
+        cancelBtn.className = "cancel-del";
+        cancelBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+        cancelBtn.onclick = function () { confirmDeleteId = null; render(); };
+        actions.appendChild(delBtn);
+        actions.appendChild(cancelBtn);
+      } else {
+        var trashBtn = document.createElement("button");
+        trashBtn.className = "icon-btn";
+        trashBtn.setAttribute("aria-label", "目標を削除");
+        trashBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>';
+        trashBtn.onclick = function () { confirmDeleteId = goal.id; render(); };
+        actions.appendChild(trashBtn);
+      }
+
+      head.appendChild(titleWrap);
+      head.appendChild(actions);
+      card.appendChild(head);
+
+      var weekRow = document.createElement("div");
+      weekRow.className = "weekday-row";
+      WEEKDAYS.forEach(function (w) {
+        var wd = document.createElement("div");
+        wd.textContent = w;
+        weekRow.appendChild(wd);
+      });
+      card.appendChild(weekRow);
+
+      var grid = document.createElement("div");
+      grid.className = "day-grid";
+      cells.forEach(function (dd) {
+        if (!dd) {
+          var blank = document.createElement("div");
+          blank.className = "day-empty";
+          grid.appendChild(blank);
+          return;
+        }
+        var key = dateKey(year, month, dd);
+        var checked = !!goal.checks[key];
+        var isToday = isCurrentMonth && dd === today.getDate();
+        var btn = document.createElement("button");
+        btn.className = "day-btn";
+        btn.textContent = dd;
+        btn.style.background = checked ? color.fg : color.bg;
+        btn.style.color = checked ? "#FFFFFF" : color.fg;
+        btn.style.borderColor = isToday ? color.fg : "transparent";
+        btn.style.opacity = checked ? "1" : "0.85";
+        btn.onclick = function () {
+          if (goal.checks[key]) delete goal.checks[key];
+          else goal.checks[key] = true;
+          save(); render();
+        };
+        grid.appendChild(btn);
+      });
+      card.appendChild(grid);
+
+      listEl.appendChild(card);
+    });
+  }
+
+  document.getElementById("prevMonth").onclick = function () {
+    month -= 1;
+    if (month < 0) { month = 11; year -= 1; }
+    render();
+  };
+  document.getElementById("nextMonth").onclick = function () {
+    month += 1;
+    if (month > 11) { month = 0; year += 1; }
+    render();
+  };
+  document.getElementById("backTodayBtn").onclick = function () {
+    year = today.getFullYear();
+    month = today.getMonth();
+    render();
+  };
+
+  var addForm = document.getElementById("addForm");
+  var addToggle = document.getElementById("addToggle");
+  var newGoalInput = document.getElementById("newGoalInput");
+
+  addToggle.onclick = function () {
+    addToggle.style.display = "none";
+    addForm.style.display = "flex";
+    newGoalInput.focus();
+  };
+  function closeAddForm() {
+    addForm.style.display = "none";
+    addToggle.style.display = "flex";
+    newGoalInput.value = "";
+  }
+  function submitGoal() {
+    var name = newGoalInput.value.trim();
+    if (!name) return;
+    goals.push({
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      name: name,
+      colorIdx: goals.length % PALETTE.length,
+      checks: {}
+    });
+    save();
+    closeAddForm();
+    render();
+  }
+  document.getElementById("submitGoal").onclick = submitGoal;
+  newGoalInput.addEventListener("keydown", function (e) {
+    if (e.key === "Enter") submitGoal();
+    if (e.key === "Escape") closeAddForm();
+  });
+
+  load();
+  render();
+})();
+</script>
+</body>
+</html>
